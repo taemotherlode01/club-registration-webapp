@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Table, Modal, Button } from 'react-bootstrap';
 import './AllClub.css';
 import axios from 'axios';
+import dayjs from 'dayjs';
 
 const AllClubChoose = ({ onClubSelection }) => {
   const [allClubs, setAllClubs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // ค่าที่ใช้ในการค้นหา
+  const [tempSearchTerm, setTempSearchTerm] = useState(''); // ค่าชั่วคราวขณะพิมพ์
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [clubMemberCounts, setClubMemberCounts] = useState({});
@@ -14,7 +16,7 @@ const AllClubChoose = ({ onClubSelection }) => {
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [alreadyChosen, setAlreadyChosen] = useState(false);
   const [studentClassId, setStudentClassId] = useState('');
-  const [isWithinOpeningHours, setIsWithinOpeningHours] = useState(true); // New state for opening hours check
+  const [isWithinOpeningHours, setIsWithinOpeningHours] = useState(true);
 
   useEffect(() => {
     fetchAllClubs();
@@ -25,8 +27,23 @@ const AllClubChoose = ({ onClubSelection }) => {
       setStudentId(id);
       setStudentClassId(class_id);
     }
-    fetchOpeningHours(); // Fetch opening hours data when component mounts
+    fetchOpeningHours();
   }, []);
+
+  useEffect(() => {
+    const fetchAlreadyChosen = async () => {
+      try {
+        const response = await axios.get(`http://localhost:4000/student_already_chosen/${studentId}`);
+        setAlreadyChosen(response.data.alreadyChosen);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    if (studentId) {
+      fetchAlreadyChosen();
+    }
+  }, [studentId]);
 
   const fetchAllClubs = async () => {
     try {
@@ -55,12 +72,34 @@ const AllClubChoose = ({ onClubSelection }) => {
 
   const fetchOpeningHours = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/combined_time_data");
-      const { timeOpenData, endTimeOpenData } = response.data;
-      const currentTime = new Date();
-      const openingTime = new Date(timeOpenData[0].date_of_open);
-      const closingTime = new Date(endTimeOpenData[0].date_end);
-      setIsWithinOpeningHours(currentTime >= openingTime && currentTime <= closingTime);
+      const [startResponse, endResponse] = await Promise.all([
+        axios.get("http://localhost:4000/get_time_open"),
+        axios.get("http://localhost:4000/get_end_time_open")
+      ]);
+
+      if (startResponse.data.length > 0 && endResponse.data.length > 0) {
+        const startData = startResponse.data[0];
+        const endData = endResponse.data[0];
+
+        const startDate = dayjs(startData.date_of_open).format('YYYY-MM-DD');
+        const startTime = startData.time_open;
+        const startDateTime = dayjs(`${startDate}T${startTime}`);
+
+        const endDate = dayjs(endData.date_end).format('YYYY-MM-DD');
+        const endTime = endData.time_end;
+        const endDateTime = dayjs(`${endDate}T${endTime}`);
+
+        const currentTime = dayjs();
+        setIsWithinOpeningHours(currentTime >= startDateTime && currentTime <= endDateTime);
+
+        // Set up interval to check opening hours every second
+        const interval = setInterval(() => {
+          const now = dayjs();
+          setIsWithinOpeningHours(now >= startDateTime && now <= endDateTime);
+        }, 1000);
+
+        return () => clearInterval(interval);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -95,7 +134,6 @@ const AllClubChoose = ({ onClubSelection }) => {
           class_name: club.class_name,
           open_to_receive: club.open_to_receive,
           number_of_member: club.number_of_member,
-          end_date_of_receive: club.end_date_of_receive,
         });
       }
     });
@@ -118,31 +156,38 @@ const AllClubChoose = ({ onClubSelection }) => {
   };
 
   const handleConfirmSelection = async () => {
-  try {
-    const response = await axios.post("http://localhost:4000/student_choose", {
-      student_id: studentId,
-      club_id: selectedClubId
-    });
-    if (response.status === 200) {
-      console.log('Club selected:', selectedClubId);
-      setAlreadyChosen(true); // ตั้งค่า alreadyChosen เป็น true เมื่อเลือกชุมนุมแล้ว
-
-      // บันทึกข้อมูลการเลือกชุมนุมลงใน Local Storage หรือ Session Storage
-      localStorage.setItem('clubSelection', 'selected');
-
-      // After successfully selecting a club, call the function passed in through props to refresh ClubStudent
-      onClubSelection();
-    } else {
-      console.error('Failed to select club');
+    try {
+      const response = await axios.post("http://localhost:4000/student_choose", {
+        student_id: studentId,
+        club_id: selectedClubId
+      });
+  
+      if (response.status === 200) {
+        console.log('Club selected:', selectedClubId);
+  
+        // อัปเดตจำนวนสมาชิกของชุมนุมที่เลือกทันที
+        setClubMemberCounts(prevCounts => ({
+          ...prevCounts,
+          [selectedClubId]: (prevCounts[selectedClubId] || 0) + 1
+        }));
+  
+        setAlreadyChosen(true);
+        localStorage.setItem('clubSelection', 'selected');
+        onClubSelection();
+      } else {
+        console.error('Failed to select club');
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-  setShowModal(false);
-};
+    setShowModal(false);
+  };
 
-
-  const currentDate = new Date();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setSearchTerm(tempSearchTerm); // อัปเดต searchTerm เมื่อกด Enter
+    }
+  };
 
   if (!isWithinOpeningHours) {
     return <div style={{textAlign: "center"}}>ไม่ได้อยู่ในเวลาทำการ</div>;
@@ -155,8 +200,9 @@ const AllClubChoose = ({ onClubSelection }) => {
           type="text"
           className='form-control'
           placeholder="ค้นหาชุมนุม"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={tempSearchTerm}
+          onChange={(e) => setTempSearchTerm(e.target.value)} // อัปเดต tempSearchTerm ขณะพิมพ์
+          onKeyDown={handleKeyDown} // ตรวจสอบการกดปุ่ม
           style={{maxWidth:"500px"}}
         />
       </div>
@@ -170,7 +216,6 @@ const AllClubChoose = ({ onClubSelection }) => {
               <th style={{ minWidth: '80px' }}>ชั้นที่รับ</th>
               <th style={{ minWidth: '80px' }}>จำนวนที่รับ</th>
               <th style={{ minWidth: '70px' }}>จำนวนสมาชิก</th>
-              <th style={{ minWidth: '100px' }}>วันที่ปิดรับ</th>
               <th>เลือก</th>
             </tr>
           </thead>
@@ -196,14 +241,13 @@ const AllClubChoose = ({ onClubSelection }) => {
                 </td>
                 <td>{club.classes[0].open_to_receive}</td>
                 <td>{clubMemberCounts[club.club_id] || 0}</td>
-                <td>{new Date(club.classes[0].end_date_of_receive).toLocaleDateString('th-TH')}</td>
                 <td>
                   <button
-                    className={`btn ${alreadyChosen || !club.classes.some(cls => cls.class_id === studentClassId) || (clubMemberCounts[club.club_id] || 0) >= club.classes[0].open_to_receive || currentDate >= new Date(club.classes[0].end_date_of_receive) ? 'btn-danger' : 'btn-primary'}`}
+                    className={`btn ${alreadyChosen || !club.classes.some(cls => cls.class_id === studentClassId) || (clubMemberCounts[club.club_id] || 0) >= club.classes[0].open_to_receive ? 'btn-danger' : 'btn-primary'}`}
                     onClick={() => handleSelectClub(club.club_id)}
-                    disabled={alreadyChosen || !club.classes.some(cls => cls.class_id === studentClassId) || (clubMemberCounts[club.club_id] || 0) >= club.classes[0].open_to_receive || currentDate >= new Date(club.classes[0].end_date_of_receive)}
+                    disabled={alreadyChosen || !club.classes.some(cls => cls.class_id === studentClassId) || (clubMemberCounts[club.club_id] || 0) >= club.classes[0].open_to_receive}
                   >
-                    {alreadyChosen || !club.classes.some(cls => cls.class_id === studentClassId) || (clubMemberCounts[club.club_id] || 0) >= club.classes[0].open_to_receive || currentDate >= new Date(club.classes[0].end_date_of_receive) ? 'ล็อก' : 'เลือก'}
+                    {alreadyChosen || !club.classes.some(cls => cls.class_id === studentClassId) || (clubMemberCounts[club.club_id] || 0) >= club.classes[0].open_to_receive ? 'ล็อก' : 'เลือก'}
                   </button>
                 </td>
               </tr>

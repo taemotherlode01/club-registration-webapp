@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Modal, Button } from 'react-bootstrap';
-
+import './ClubStudent.css';
 export default function ClubStudent({ refresh }) {
   const [studentData, setStudentData] = useState(null);
   const [clubs, setClubs] = useState([]);
@@ -112,7 +112,8 @@ export default function ClubStudent({ refresh }) {
                 <div className="card-body d-flex flex-column justify-content-between">
                   <h5 className="card-title">ชุมนุมของฉัน</h5>
                   <p className="card-text">{club.club_name}</p>
-                  <p className="card-text">{club.first_name} {club.last_name}</p>
+                  <div className="club-choose">{club.description?.trim() ? club.description : "-"}</div>
+                  {/* <p className="card-text">{club.first_name} {club.last_name}</p> */}
                   {combinedTimeData && combinedTimeData.endTimeOpenData.some(data => new Date(data.date_end) > new Date()) ? (
                     <button onClick={() => handleShowConfirmationModal(club.club_id)} className="btn btn-danger">ออกจากชุมนุม</button>
                   ) : (

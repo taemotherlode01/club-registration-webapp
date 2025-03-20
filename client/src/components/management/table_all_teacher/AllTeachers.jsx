@@ -5,13 +5,18 @@ import { FaEdit, FaTrash } from 'react-icons/fa';
 import './AllTeacher.css';
 import AddTeacher from '../add_teacher/AddTeacher';
 import EditTeacher from '../edit_teacher/EditTeacher';
+import Swal from 'sweetalert2';
+import { Modal } from 'react-bootstrap';
+import * as XLSX from 'xlsx';
 
 function AllTeachers() {
   const [teachers, setTeachers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmedSearchTerm, setConfirmedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [file, setFile] = useState(null);
+  const [isUploadDisabled, setIsUploadDisabled] = useState(true); // เพิ่ม state เพื่อควบคุมปุ่ม Upload
   const [uploadStatus, setUploadStatus] = useState('');
   const [selectAll, setSelectAll] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -19,11 +24,10 @@ function AllTeachers() {
   const [selectedTeacherData, setSelectedTeacherData] = useState(null);
   const [sortBy, setSortBy] = useState('');
   const [showAddTeacher, setShowAddTeacher] = useState(false);
-  const [isModalClosed, setIsModalClosed] = useState(true);
 
   useEffect(() => {
     fetchData();
-  }, [searchTerm]);
+  }, [sortBy, showEditTeacher, showAddTeacher]);
 
   const fetchData = async () => {
     try {
@@ -34,17 +38,77 @@ function AllTeachers() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    
+    // สร้างข้อมูลสำหรับเทมเพลตครู
+    const templateData = [
+        { 
+            "อีเมล": "", 
+            "รหัสผ่าน": "", 
+            "เบอร์โทร": "", 
+            "ชื่อ": "", 
+            "นามสกุล": "", 
+            "รหัสบทบาท": 0,
+        }
+    ];
+
+    // สร้าง worksheet จากข้อมูล
+    const ws = XLSX.utils.json_to_sheet(templateData);
+
+    // ปรับความกว้างของคอลัมน์
+    ws['!cols'] = [
+        { wch: 25 }, // อีเมล
+        { wch: 15 }, // รหัสผ่าน
+        { wch: 15 }, // เบอร์โทร
+        { wch: 15 }, // ชื่อ
+        { wch: 20 }, // นามสกุล
+        { wch: 10 }, // รหัสบทบาท
+    ];
+
+    // กำหนดสไตล์ให้กับ header
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = { c: C, r: 0 }; // Header row
+        const cell_ref = XLSX.utils.encode_cell(cell_address);
+        
+        if (ws[cell_ref]) {
+            ws[cell_ref].s = {
+                font: { bold: true, color: { rgb: "FFFFFF" } }, // ตัวหนา สีขาว
+                fill: { fgColor: { rgb: "4F81BD" } }, // พื้นหลังสีฟ้า
+                alignment: { horizontal: "center", vertical: "center" },
+            };
+        }
+    }
+
+    // เพิ่ม worksheet ลงใน workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Teacher Template");
+
+    // บันทึกและดาวน์โหลดไฟล์
+    XLSX.writeFile(wb, "teacher_template.xlsx");
+};
+
+
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      setConfirmedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }
+  };
+
   const filteredTeachers = teachers.filter((teacher) => {
     const fullName = `${teacher.first_name} ${teacher.last_name}`.toLowerCase();
-    return fullName.includes(searchTerm.toLowerCase());
+    return fullName.includes(confirmedSearchTerm.toLowerCase());
   });
 
   const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile);
+    setIsUploadDisabled(!selectedFile); // Disable ปุ่มถ้าไม่มีการเลือกไฟล์, Enable ถ้ามีไฟล์
   };
 
   const handleUpload = async () => {
@@ -58,11 +122,24 @@ function AllTeachers() {
         },
       });
   
-      setUploadStatus('อัปโหลดสำเร็จ');
+      Swal.fire({
+        icon: 'success',
+        title: 'อัปโหลดสำเร็จ!',
+        text: 'ไฟล์ถูกอัปโหลดเรียบร้อยแล้ว',
+        confirmButtonText: 'ตกลง'
+      });
+  
       fetchData();
+      setFile(null); // รีเซ็ตไฟล์หลังอัปโหลดสำเร็จ
+      setIsUploadDisabled(true); // Disable ปุ่มหลังอัปโหลดสำเร็จ
     } catch (error) {
       console.error("Error uploading file:", error);
-      setUploadStatus('อัปโหลดไม่สำเร็จ');
+      Swal.fire({
+        icon: 'error',
+        title: 'อัปโหลดไม่สำเร็จ!',
+        text: 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์',
+        confirmButtonText: 'ตกลง'
+      });
     }
   };
 
@@ -76,63 +153,99 @@ function AllTeachers() {
     setSelectedTeacherData(teacher);
     setShowEditTeacher(true);
   };
-  
 
   const handleCloseEditTeacher = () => {
     setShowEditTeacher(false);
-    // Call fetchData to refresh data when closing the edit modal
-    fetchData();
   };
-  
+
   const handleAddTeacher = () => {
     setShowAddTeacher(true);
-    setIsModalClosed(false); // เพิ่มบรรทัดนี้
   };
-  
-  useEffect(() => {
-    if (isModalClosed) {
-      fetchData();
-    }
-  }, [isModalClosed]);
-  
 
   const handleCloseAddTeacher = () => {
     setShowAddTeacher(false);
-    setIsModalClosed(true); // เพิ่มบรรทัดนี้
   };
-  
 
   const handleSelectAll = (e) => {
     const checked = e.target.checked;
     setSelectAll(checked);
-    const newSelectedItems = checked ? filteredTeachers.map(teacher => teacher.teacher_id) : [];
+    const newSelectedItems = checked ? currentItems.map(teacher => teacher.teacher_id) : [];
     setSelectedItems(newSelectedItems);
   };
 
-  const handleDeleteSelectedItems = () => {
+  const handleDeleteSelectedItems = async () => {
     if (selectedItems.length > 0) {
-      deleteTeachers(selectedItems);
-    }
-  };
-  
-
-  const deleteTeachers = async (ids) => {
-    try {
-      await axios.delete(`http://localhost:4000/delete_teachers`, {
-        data: { teacherIds: ids }
+      const result = await Swal.fire({
+        title: 'คุณแน่ใจหรือไม่?',
+        text: `คุณต้องการลบครูที่เลือกทั้งหมด ${selectedItems.length} คนหรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
       });
-      fetchData();
-    } catch (error) {
-      console.error("Error deleting teachers:", error);
+
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:4000/delete_teachers`, {
+            data: { teacherIds: selectedItems }
+          });
+          fetchData();
+          Swal.fire(
+            'ลบแล้ว!',
+            'ครูที่เลือกถูกลบเรียบร้อยแล้ว',
+            'success'
+          );
+          setSelectedItems([]);
+          setSelectAll(false);
+        } catch (error) {
+          console.error("Error deleting teachers:", error);
+          Swal.fire(
+            'เกิดข้อผิดพลาด!',
+            'ไม่สามารถลบครูได้',
+            'error'
+          );
+        }
+      }
+    } else {
+      Swal.fire(
+        'ไม่มีรายการที่เลือก',
+        'กรุณาเลือกรายการที่ต้องการลบ',
+        'warning'
+      );
     }
   };
 
   const handleDeleteTeacher = async (teacherId) => {
-    try {
-      await axios.delete(`http://localhost:4000/delete_teacher/${teacherId}`);
-      fetchData();
-    } catch (error) {
-      console.error("Error deleting teacher:", error);
+    const result = await Swal.fire({
+      title: 'คุณแน่ใจหรือไม่?',
+      text: "คุณต้องการลบครูคนนี้หรือไม่?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'ใช่, ลบเลย!',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:4000/delete_teacher/${teacherId}`);
+        fetchData();
+        Swal.fire(
+          'ลบแล้ว!',
+          'ครูถูกลบเรียบร้อยแล้ว',
+          'success'
+        );
+      } catch (error) {
+        console.error("Error deleting teacher:", error);
+        Swal.fire(
+          'เกิดข้อผิดพลาด!',
+          'ไม่สามารถลบครูได้',
+          'error'
+        );
+      }
     }
   };
 
@@ -145,7 +258,24 @@ function AllTeachers() {
       newSelectedItems = newSelectedItems.filter(id => id !== teacherId);
     }
     setSelectedItems(newSelectedItems);
-    setSelectAll(newSelectedItems.length === filteredTeachers.length);
+    setSelectAll(newSelectedItems.length === currentItems.length);
+  };
+
+  const compareValues = (key) => {
+    return function (a, b) {
+      if (!a.hasOwnProperty(key) || !b.hasOwnProperty(key)) {
+        return 0;
+      }
+      const varA = (typeof a[key] === 'string') ? a[key].toUpperCase() : a[key];
+      const varB = (typeof b[key] === 'string') ? b[key].toUpperCase() : b[key];
+      let comparison = 0;
+      if (varA > varB) {
+        comparison = 1;
+      } else if (varA < varB) {
+        comparison = -1;
+      }
+      return key[0] === '-' ? comparison * -1 : comparison;
+    };
   };
 
   const sortedTeachers = sortBy ? [...filteredTeachers].sort(compareValues(sortBy)) : filteredTeachers;
@@ -161,7 +291,6 @@ function AllTeachers() {
         <div className="p-2 bd-highlight">
           <button className='btn btn-success' onClick={handleAddTeacher}>+เพิ่มครู</button>
         </div>
-        {showAddTeacher && <AddTeacher onClose={handleCloseAddTeacher} />}
         <div className="p-2 bd-highlight">
           <input type="file" className="form-control" onChange={handleFileChange} />
           {uploadStatus && (
@@ -171,8 +300,15 @@ function AllTeachers() {
           )}
         </div>
         <div className="p-2 bd-highlight">
-          <button onClick={handleUpload} className='btn btn-primary'>Upload</button>
+          <button onClick={handleUpload} className='btn btn-primary' disabled={isUploadDisabled}>Upload</button>
         </div>
+
+        <div className="p-2 bd-highlight">
+          <button onClick={handleDownloadTemplate} className='btn btn-secondary'>
+            ดาวน์โหลดเทมเพลต
+          </button>
+        </div>
+
       </div>
       <div className="row mb-3">
         <div className="col">
@@ -180,8 +316,9 @@ function AllTeachers() {
             type="text"
             className="form-control smaller-placeholder"
             placeholder="ค้นหาครูด้วยชื่อนามสกุล"
-            value={searchTerm} 
+            value={searchTerm}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyPress}
           />
         </div>
       </div>
@@ -203,36 +340,61 @@ function AllTeachers() {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((teacher) => (
-              <tr key={teacher.teacher_id}>
-                <td>
-                  <input type="checkbox" onChange={(e) => handleSelectItem(e, teacher.teacher_id)} checked={selectedItems.includes(teacher.teacher_id)} />
-                </td>
-                <td>{teacher.first_name}</td>
-                <td>{teacher.last_name}</td>
-                <td>{teacher.email}</td>
-                <td>{teacher.password}</td>
-                <td>{teacher.phone_number}</td>
-                <td>{teacher.role_name}</td>
-                <td>
-                  <button className="btn btn-primary" onClick={() => handleEditTeacher(teacher)}><FaEdit className="mr-1" /></button>
-                  <button className="btn btn-danger" onClick={() => handleDeleteTeacher(teacher.teacher_id)}><FaTrash className="mr-1" /></button>
+            {currentItems.length > 0 ? (
+              currentItems.map((teacher) => (
+                <tr key={teacher.teacher_id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      onChange={(e) => handleSelectItem(e, teacher.teacher_id)}
+                      checked={selectedItems.includes(teacher.teacher_id)}
+                    />
+                  </td>
+                  <td>{teacher.first_name}</td>
+                  <td>{teacher.last_name}</td>
+                  <td>{teacher.email}</td>
+                  <td>{teacher.password}</td>
+                  <td>{teacher.phone_number}</td>
+                  <td>{teacher.role_name}</td>
+                  <td>
+                    <button className="btn btn-primary" onClick={() => handleEditTeacher(teacher)} style={{ marginRight: '5px' }}>
+                      <FaEdit className="mr-1" />
+                    </button>
+                    <button className="btn btn-danger" onClick={() => handleDeleteTeacher(teacher.teacher_id)}>
+                      <FaTrash className="mr-1" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" className="text-center">
+                  {confirmedSearchTerm === '' ? 'ค้นหา' : 'ไม่พบข้อมูล'}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
-        {showEditTeacher && <EditTeacher teacherData={selectedTeacherData} onClose={handleCloseEditTeacher} onRefresh={fetchData} />}
-        <ul className="pagination">
-          {[...Array(Math.ceil(filteredTeachers.length / itemsPerPage)).keys()].map((number) => (
-            <li key={number + 1} className="page-item">
-              <button onClick={() => paginate(number + 1)} className="page-link">
-                {number + 1}
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
+      <ul className="pagination">
+        {[...Array(Math.ceil(filteredTeachers.length / itemsPerPage)).keys()].map((number) => (
+          <li key={number + 1} className="page-item">
+            <button onClick={() => paginate(number + 1)} className="page-link">
+              {number + 1}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {/* Modal สำหรับเพิ่มครู */}
+      <Modal show={showAddTeacher} onHide={handleCloseAddTeacher}>
+        <AddTeacher onClose={handleCloseAddTeacher} />
+      </Modal>
+
+      {/* Modal สำหรับแก้ไขครู */}
+      <Modal show={showEditTeacher} onHide={handleCloseEditTeacher}>
+        <EditTeacher teacherData={selectedTeacherData} onRefresh={fetchData} onClose={handleCloseEditTeacher} />
+      </Modal>
     </div>
   );
 }

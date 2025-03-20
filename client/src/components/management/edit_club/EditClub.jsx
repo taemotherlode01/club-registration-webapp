@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Swal from 'sweetalert2';
 
 function EditClub({ club, updateClubs, onCancel }) {
+  // ตรวจสอบว่า club มีค่าหรือไม่
+  if (!club) {
+    return null; // หรือสามารถแสดงข้อความว่า "ไม่พบข้อมูลชุมนุม" แทนก็ได้
+  }
+
   const [formData, setFormData] = useState({
     club_name: club.club_name,
     open_to_receive: club.classes[0].open_to_receive,
-    end_date_of_receive: club.classes[0].end_date_of_receive.substring(0, club.classes[0].end_date_of_receive.indexOf('T')),
     teacher_id: club.teachers.map(teacher => teacher.teacher_id),
-    class_id: club.classes.length > 0 ? club.classes.map(cls => cls.class_id) : []
+    class_id: club.classes.length > 0 ? club.classes.map(cls => cls.class_id) : [],
+    description: club.description || '' // ตรวจสอบว่า description มีค่าหรือไม่
   });
-  
-  
-  console.log(formData.class_id);
+
   const [classList, setClassList] = useState([]);
   const [teacherList, setTeacherList] = useState([]);
 
@@ -88,42 +92,90 @@ function EditClub({ club, updateClubs, onCancel }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer yourAuthToken' // Add your authentication token here if needed
+          Authorization: 'Bearer yourAuthToken', // Add your authentication token here if needed
         },
         body: JSON.stringify({
           club_name: formData.club_name,
           open_to_receive: formData.open_to_receive,
-          end_date_of_receive: formData.end_date_of_receive,
+          description: formData.description, // ส่ง description ไปยัง API
           teacher_id: formData.teacher_id,
-          class_id: formData.class_id
-        })
+          class_id: formData.class_id,
+        }),
       });
       if (response.ok) {
         console.log('Club updated successfully');
-        updateClubs(); // เรียกใช้งานฟังก์ชัน updateClubs() เพื่ออัปเดตข้อมูลทันที
+
+        // แสดง SweetAlert2 เมื่อแก้ไขชุมนุมสำเร็จ
+        await Swal.fire({
+          icon: 'success',
+          title: 'แก้ไขชุมนุมสำเร็จ!',
+          text: 'ชุมนุมถูกแก้ไขเรียบร้อยแล้ว',
+          confirmButtonText: 'ตกลง',
+        });
+
+        // เมื่อแก้ไขชุมนุมสำเร็จ ให้เรียกใช้ฟังก์ชัน updateClubs เพื่ออัปเดตข้อมูลใน MyClub
+        updateClubs();
+
+        // ปิด Modal โดยเรียกใช้ฟังก์ชัน onCancel ที่ส่งผ่าน props
+        onCancel();
+      } else {
+        console.error('Failed to update club:', response.statusText);
+        await Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด!',
+          text: 'ไม่สามารถแก้ไขชุมนุมได้',
+          confirmButtonText: 'ตกลง',
+        });
+        // ไม่เรียก onCancel ในกรณีที่เกิดข้อผิดพลาด
       }
     } catch (error) {
       console.error('Error updating club:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด!',
+        text: 'ไม่สามารถแก้ไขชุมนุมได้',
+        confirmButtonText: 'ตกลง',
+      });
+      // ไม่เรียก onCancel ในกรณีที่เกิดข้อผิดพลาด
     }
   };
-  
-  
-  
+
   return (
     <div className="container px-5">
       <h2>แก้ไขชุมนุม</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>ชื่อชุมนุม</label>
-          <input type="text" className="form-control" name="club_name" value={formData.club_name} onChange={handleInputChange} required />
+          <input
+            type="text"
+            className="form-control"
+            name="club_name"
+            value={formData.club_name}
+            onChange={handleInputChange}
+            required
+          />
         </div>
         <div className="form-group mt-2">
           <label>จำนวนที่รับ</label>
-          <input type="number" className="form-control" name="open_to_receive" value={formData.open_to_receive} onChange={handleInputChange} required />
+          <input
+            type="number"
+            className="form-control"
+            name="open_to_receive"
+            value={formData.open_to_receive}
+            onChange={handleInputChange}
+            required
+          />
         </div>
         <div className="form-group mt-2">
-          <label>วันที่ปิดรับ</label>
-          <input type="date" className="form-control" name="end_date_of_receive" value={formData.end_date_of_receive} onChange={handleInputChange} required />
+          <label>คำอธิบายชุมนุม</label>
+          <textarea
+            className="form-control"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows="4"
+            required
+          />
         </div>
         <div className="form-group mt-2">
           <label>เลือกครูที่ปรึกษาชุมนุม</label>
@@ -145,7 +197,7 @@ function EditClub({ club, updateClubs, onCancel }) {
         </div>
         <div className="d-flex justify-content-start mt-3 my-4">
           <button type="submit" className="btn btn-primary">บันทึกการแก้ไข</button>
-          <button type="button" className="btn btn-secondary mx-2 " onClick={onCancel}>ยกเลิก</button>
+          <button type="button" className="btn btn-secondary mx-2" onClick={onCancel}>ยกเลิก</button>
         </div>
       </form>
     </div>

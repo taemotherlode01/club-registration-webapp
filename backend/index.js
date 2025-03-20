@@ -277,14 +277,37 @@ app.post("/upload_excel", upload.single("file"), async (req, res) => {
 
     // Read the uploaded file
     const workbook = XLSX.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0]; // Assuming the data is in the first sheet
+    const sheetName = workbook.SheetNames[0]; // Read the first sheet
     const worksheet = workbook.Sheets[sheetName];
 
-    // Parse the Excel data
-    const students = XLSX.utils.sheet_to_json(worksheet);
+    // Log worksheet data for debugging
+    console.log("Worksheet data:", worksheet);
 
-    // Insert the data into the database
-    for (const student of students) {
+    // Parse the Excel data, skipping the first row (header)
+    const students = XLSX.utils.sheet_to_json(worksheet);
+    console.log("Parsed students data:", students); // Log parsed data
+
+    // Check if there is any data
+    if (students.length === 0) {
+      return res.status(400).send("ไฟล์ Excel ไม่มีข้อมูล");
+    }
+
+    // Map data to match database columns
+    const mappedStudents = students.map((row) => ({
+      student_id: row["รหัสนักเรียน"],
+      card_code: row["เลขประจำตัวประชาชน"],
+      first_name: row["ชื่อ"],
+      last_name: row["นามสกุล"],
+      phone_number: row["เบอร์โทร"],
+      email: row["อีเมล"],
+      class_id: row["ชั้นเรียน"],
+      room_id: row["ห้อง"],
+    }));
+
+    console.log("Mapped students data:", mappedStudents); // Log mapped data
+
+    // Insert data into the database
+    for (const student of mappedStudents) {
       await query(
         "INSERT INTO student (student_id, card_code, first_name, last_name, phone_number, email, class_id, room_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [
@@ -295,14 +318,14 @@ app.post("/upload_excel", upload.single("file"), async (req, res) => {
           student.phone_number,
           student.email,
           student.class_id,
-          student.room_id
+          student.room_id,
         ]
       );
     }
 
     res.send("Data imported successfully");
   } catch (error) {
-    console.error(error);
+    console.error("Error details:", error);
     res.status(500).send("Server error");
   }
 });
@@ -444,6 +467,8 @@ app.put("/update_teacher/:teacher_id", checkAuth, checkRole("ADMIN"), async (req
 });
 
 
+
+
 app.post("/add_teachers_excel", checkAuth, checkRole("ADMIN"), upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -452,26 +477,55 @@ app.post("/add_teachers_excel", checkAuth, checkRole("ADMIN"), upload.single("fi
 
     // Read the uploaded file
     const workbook = XLSX.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0]; // Assuming the data is in the first sheet
+    const sheetName = workbook.SheetNames[0]; // Read the first sheet
     const worksheet = workbook.Sheets[sheetName];
 
-    // Parse the Excel data
-    const teachers = XLSX.utils.sheet_to_json(worksheet);
+    // Log worksheet data for debugging
+    console.log("Worksheet data:", worksheet);
 
-    // Insert the data into the database
-    for (const teacher of teachers) {
+    // Parse the Excel data, skipping the first row (header)
+    const teachers = XLSX.utils.sheet_to_json(worksheet);
+    console.log("Parsed teachers data:", teachers); // Log parsed data
+
+    // Check if there is any data
+    if (teachers.length === 0) {
+      return res.status(400).send("ไฟล์ Excel ไม่มีข้อมูล");
+    }
+
+    // Map data to match database columns
+    const mappedTeachers = teachers.map((row) => ({
+      email: row["อีเมล"],
+      password: row["รหัสผ่าน"],
+      phone_number: row["เบอร์โทร"],
+      first_name: row["ชื่อ"],
+      last_name: row["นามสกุล"],
+      role_id: row["รหัสบทบาท"],
+    }));
+
+    console.log("Mapped teachers data:", mappedTeachers); // Log mapped data
+
+    // Insert data into the database
+    for (const teacher of mappedTeachers) {
       await query(
         "INSERT INTO teacher (email, password, phone_number, first_name, last_name, role_id) VALUES (?, ?, ?, ?, ?, ?)",
-        [teacher.email, teacher.password, teacher.phone_number, teacher.first_name, teacher.last_name, teacher.role_id]
+        [
+          teacher.email,
+          teacher.password,
+          teacher.phone_number,
+          teacher.first_name,
+          teacher.last_name,
+          teacher.role_id,
+        ]
       );
     }
 
     res.send("Teachers imported successfully");
   } catch (error) {
-    console.error(error);
+    console.error("Error details:", error);
     res.status(500).send("Server error");
   }
 });
+
 // Express.js
 
 app.get("/role_list", checkAuth, checkRole("ADMIN"), async (req, res) => {
@@ -570,10 +624,10 @@ app.delete("/delete_club/:club_id", checkAuth, async (req, res) => {
 // Create a new club
 app.post("/create_club", checkAuth, async (req, res) => {
   try {
-    const { club_name, open_to_receive, number_of_member, end_date_of_receive, teacher_id, class_id } = req.body; // Retrieve club data from request body
+    const { club_name, open_to_receive,description, number_of_member, teacher_id, class_id } = req.body; // Retrieve club data from request body
 
     await query("START TRANSACTION");
-    const clubResult = await query("INSERT INTO club (club_name, open_to_receive, end_date_of_receive) VALUES (?, ?, ?)", [club_name, open_to_receive, end_date_of_receive]);
+    const clubResult = await query("INSERT INTO club (club_name, open_to_receive,description) VALUES (?, ?, ?)", [club_name, open_to_receive,description]);
     const clubId = clubResult.insertId;
 
     for (const classId of class_id) {
@@ -584,7 +638,7 @@ app.post("/create_club", checkAuth, async (req, res) => {
 
     await query("COMMIT");
 
-    res.status(201).json({ id: clubId, club_name, open_to_receive, end_date_of_receive }); // Respond with the newly created club's ID
+    res.status(201).json({ id: clubId, club_name, open_to_receive }); // Respond with the newly created club's ID
   } catch (error) {
     console.error("Error creating club:", error);
     await query("ROLLBACK");
@@ -593,15 +647,15 @@ app.post("/create_club", checkAuth, async (req, res) => {
 });
 app.put("/edit_club/:club_id", checkAuth, async (req, res) => {
   try {
-    const { club_name, open_to_receive, end_date_of_receive, teacher_id, class_id } = req.body;
+    const { club_name, open_to_receive, description, teacher_id, class_id } = req.body;
     const { club_id } = req.params;
 
+    // อัปเดตข้อมูลในตาราง club
     await query(
-      "UPDATE club SET club_name = ?, open_to_receive = ?, end_date_of_receive = ? WHERE club_id = ?",
-      [club_name, open_to_receive, end_date_of_receive, club_id]
+      "UPDATE club SET club_name = ?, open_to_receive = ?, description = ? WHERE club_id = ?",
+      [club_name, open_to_receive, description, club_id]
     );
-    
-    
+
     // ดึงข้อมูล club_data ที่เกี่ยวข้องกับ club_id ที่ต้องการอัปเดต
     const existingClubData = await query("SELECT * FROM club_data WHERE club_id = ?", [club_id]);
 
@@ -642,22 +696,20 @@ app.put("/edit_club/:club_id", checkAuth, async (req, res) => {
 
 app.post("/update_time_open/:time_open_id", checkAuth, checkRole("ADMIN"), async (req, res) => {
   try {
-    // get the data from the request body
-    const { date_of_open} = req.body;
-    const { time_open_id } = req.params; // นำเข้าค่า time_open_id จากพารามิเตอร์ URL
+    const { date_of_open, time_open } = req.body;
+    const { time_open_id } = req.params;
 
-    // validate the data
-    if (!date_of_open || !time_open_id) {
+    // ตรวจสอบว่าข้อมูลถูกส่งมาครบถ้วน
+    if (!date_of_open || !time_open || !time_open_id) {
       return res.status(400).send("Please provide date of open, time of open, and time open ID");
     }
 
-    // update the time open record
+    // อัปเดตข้อมูลในฐานข้อมูล
     await query(
-      "UPDATE time_open SET date_of_open = ? WHERE time_open_id = ?",
-      [date_of_open, time_open_id]
+      "UPDATE time_open SET date_of_open = ?, time_open = ? WHERE time_open_id = ?",
+      [date_of_open, time_open, time_open_id]
     );
 
-    // send a success message
     res.send("Time open updated successfully");
   } catch (error) {
     console.error(error);
@@ -667,23 +719,21 @@ app.post("/update_time_open/:time_open_id", checkAuth, checkRole("ADMIN"), async
 
 app.post("/update_end_time_open/:end_time_open_id", checkAuth, checkRole("ADMIN"), async (req, res) => {
   try {
-    // get the data from the request body
-    const { date_end } = req.body;
-    const { end_time_open_id } = req.params; // นำเข้าค่า time_open_id จากพารามิเตอร์ URL
+    const { date_end, time_end } = req.body;
+    const { end_time_open_id } = req.params;
 
-    // validate the data
-    if (!date_end || !end_time_open_id) {
-      return res.status(400).send("Please provide date of open, time of open, and time open ID");
+    // ตรวจสอบว่าข้อมูลถูกส่งมาครบถ้วน
+    if (!date_end || !time_end || !end_time_open_id) {
+      return res.status(400).send("Please provide date end, time end, and end time open ID");
     }
 
-    // update the time open record
+    // อัปเดตข้อมูลในฐานข้อมูล
     await query(
-      "UPDATE end_time_open SET date_end = ? WHERE end_time_open_id = ?",
-      [date_end, end_time_open_id]
+      "UPDATE end_time_open SET date_end = ?, time_end = ? WHERE end_time_open_id = ?",
+      [date_end, time_end, end_time_open_id]
     );
 
-    // send a success message
-    res.send("TimeEnd open updated successfully");
+    res.send("End time open updated successfully");
   } catch (error) {
     console.error(error);
     res.status(500).send("Server error");
@@ -850,10 +900,10 @@ app.delete("/clubs_for_student/:student_id", checkStudent, async (req, res) => {
 app.get("/combined_time_data", async (req, res) => {
   try {
     // Fetch data from time_open table
-    const timeOpenData = await query("SELECT date_of_open FROM time_open");
+    const timeOpenData = await query("SELECT date_of_open, time_open FROM time_open");
 
     // Fetch data from end_time_open table
-    const endTimeOpenData = await query("SELECT date_end FROM end_time_open");
+    const endTimeOpenData = await query("SELECT date_end, time_end FROM end_time_open");
 
     // Combine the data as needed
     const combinedData = {
@@ -868,6 +918,8 @@ app.get("/combined_time_data", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+
+
 
 app.listen(4000, () => {
   console.log("Server listening on port 4000");

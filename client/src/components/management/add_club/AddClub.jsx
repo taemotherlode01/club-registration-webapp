@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import Swal from 'sweetalert2'; // นำเข้า SweetAlert2
 
-function AddClub({ updateClubs }) { // รับฟังก์ชัน updateClubs ผ่าน props
+function AddClub({ updateClubs, onClose }) {
   const [formData, setFormData] = useState({
     club_name: '',
     open_to_receive: '',
+    description: '',
     number_of_member: '',
-    end_date_of_receive: '',
     teacher_id: [],
-    class_id: []
+    class_id: [],
   });
   const [classList, setClassList] = useState([]);
   const [teacherList, setTeacherList] = useState([]);
@@ -108,32 +109,56 @@ function AddClub({ updateClubs }) { // รับฟังก์ชัน updateC
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formDataToSend)
+        body: JSON.stringify(formDataToSend),
       });
       if (response.ok) {
         const data = await response.json();
         console.log('Club created successfully:', data);
-  
+
+        // แสดง SweetAlert2 เมื่อสร้างชุมนุมสำเร็จ
+        await Swal.fire({
+          icon: 'success',
+          title: 'สร้างชุมนุมสำเร็จ!',
+          text: 'ชุมนุมถูกสร้างเรียบร้อยแล้ว',
+          confirmButtonText: 'ตกลง',
+        });
+
         // เมื่อสร้างชุมนุมสำเร็จ ให้เรียกใช้ฟังก์ชัน updateClubs เพื่ออัปเดตข้อมูลใน MyClub
         updateClubs();
-  
-        // รีเฟรชฟอร์มโดยล้างข้อมูลในฟอร์ม
+
+        // ปิด Modal โดยเรียกใช้ฟังก์ชัน onClose ที่ส่งผ่าน props
+        onClose();
+
+        // รีเซ็ตฟอร์ม
         setFormData({
           club_name: '',
           open_to_receive: '',
           number_of_member: '',
-          end_date_of_receive: '',
           teacher_id: [],
-          class_id: []
+          class_id: [],
+          description: '' // รีเซ็ต description
         });
       } else {
         console.error('Failed to create club:', response.statusText);
+        await Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด!',
+          text: 'ไม่สามารถสร้างชุมนุมได้',
+          confirmButtonText: 'ตกลง',
+        });
+        // ไม่เรียก onClose ในกรณีที่เกิดข้อผิดพลาด
       }
     } catch (error) {
       console.error('Error creating club:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด!',
+        text: 'ไม่สามารถสร้างชุมนุมได้',
+        confirmButtonText: 'ตกลง',
+      });
+      // ไม่เรียก onClose ในกรณีที่เกิดข้อผิดพลาด
     }
   };
-  
 
   return (
     <div className="container px-5">
@@ -141,15 +166,36 @@ function AddClub({ updateClubs }) { // รับฟังก์ชัน updateC
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>ชื่อชุมนุม</label>
-          <input type="text" className="form-control" name="club_name" value={formData.club_name} onChange={handleInputChange} required />
+          <input
+            type="text"
+            className="form-control"
+            name="club_name"
+            value={formData.club_name}
+            onChange={handleInputChange}
+            required
+          />
         </div>
         <div className="form-group mt-2">
           <label>จำนวนที่รับ</label>
-          <input type="number" className="form-control" name="open_to_receive" value={formData.open_to_receive} onChange={handleInputChange} required />
+          <input
+            type="number"
+            className="form-control"
+            name="open_to_receive"
+            value={formData.open_to_receive}
+            onChange={handleInputChange}
+            required
+          />
         </div>
         <div className="form-group mt-2">
-          <label>วันที่ปิดรับ</label>
-          <input type="date" className="form-control" name="end_date_of_receive" value={formData.end_date_of_receive} onChange={handleInputChange} required />
+          <label>คำอธิบายชุมนุม</label>
+          <textarea
+            className="form-control"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows="4"
+            required
+          />
         </div>
         <div className="form-group mt-2">
           <label>เลือกครูที่ปรึกษาชุมนุม</label>

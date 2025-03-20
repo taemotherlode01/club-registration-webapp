@@ -3,29 +3,30 @@ import Navbar from '../components/navbar/navbar_not_login/Navbar';
 import { Table } from 'react-bootstrap';
 import axios from 'axios';
 import Footer from '../components/footer/Footer';
+import CooldownShow from '../components/cooldownShow/CooldownShow';
+import './HomePage.css'; // เพิ่มไฟล์ CSS สำหรับจัดการ layout
 
 export default function HomePage() {
   const [allClubs, setAllClubs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmedSearchTerm, setConfirmedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [clubMemberCounts, setClubMemberCounts] = useState({});
-  const [combinedTimeData, setCombinedTimeData] = useState(null); // Define combinedTimeData
+  const [combinedTimeData, setCombinedTimeData] = useState(null);
 
   useEffect(() => {
     fetchAllClubs();
     fetchClubMemberCounts();
-      axios.get(`http://localhost:4000/combined_time_data`)
-        .then(response => {
-          console.log('Combined Time Data:', response.data); // Add this line
-          setCombinedTimeData(response.data);
-        })
-        .catch(error => {
-          console.error('Error fetching combined time data:', error);
-        });
-
+    axios.get(`http://localhost:4000/combined_time_data`)
+      .then(response => {
+        console.log('Combined Time Data:', response.data);
+        setCombinedTimeData(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching combined time data:', error);
+      });
   }, []);
-  
 
   const thaiDateFormat = (dateString) => {
     const date = new Date(dateString);
@@ -90,15 +91,25 @@ export default function HomePage() {
           class_name: club.class_name,
           open_to_receive: club.open_to_receive,
           number_of_member: club.number_of_member,
-          end_date_of_receive: club.end_date_of_receive,
         });
       }
     });
     return Object.values(groupedData);
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      setConfirmedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }
+  };
+
   const filteredClubs = allClubs.filter(club =>
-    club.club_name.toLowerCase().includes(searchTerm.toLowerCase())
+    club.club_name.toLowerCase().includes(confirmedSearchTerm.toLowerCase())
   );
 
   const indexOfLastClub = currentPage * itemsPerPage;
@@ -108,43 +119,49 @@ export default function HomePage() {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <div>
+    <div className="page-wrapper">
       <Navbar />
-      <div style={{textAlign:'center', margin: '20px'}}>
-      {combinedTimeData && (
-        <div className="row justify-content-center">
-          {combinedTimeData.timeOpenData.map((data, index) => (
-            <div className="col-md-4 mb-3" key={index}>
-              <div className="card">
-                <div className="card-body d-flex flex-column justify-content-between">
-                  <h5 className="card-title">เริ่ม</h5>
-                  <p className="card-text">วันที่: {thaiDateFormat(data.date_of_open)}</p>
+      <div style={{ textAlign: 'center', margin: '20px' }}>
+        {combinedTimeData && (
+          <div className="row justify-content-center">
+            {combinedTimeData.timeOpenData.map((data, index) => (
+              <div className="col-md-4 mb-3" key={index}>
+                <div className="card">
+                  <div className="card-body d-flex flex-column justify-content-between">
+                    <h5 className="card-title">เริ่ม</h5>
+                    <p className="card-text">วันที่: {thaiDateFormat(data.date_of_open)}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          {combinedTimeData.endTimeOpenData.map((data, index) => (
-            <div className="col-md-4 mb-3" key={index}>
-              <div className="card">
-                <div className="card-body d-flex flex-column justify-content-between">
-                  <h5 className="card-title">สิ้นสุด</h5>
-                  <p className="card-text">วันที่: {thaiDateFormat(data.date_end)}</p>
+            ))}
+            {combinedTimeData.endTimeOpenData.map((data, index) => (
+              <div className="col-md-4 mb-3" key={index}>
+                <div className="card">
+                  <div className="card-body d-flex flex-column justify-content-between">
+                    <h5 className="card-title">สิ้นสุด</h5>
+                    <p className="card-text">วันที่: {thaiDateFormat(data.date_end)}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
       </div>
-      <div className="container">
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px', marginBottom: '20px', padding: '0px 20px' }}>
+        <CooldownShow />
+      </div>
+
+      <div className="container content-wrapper">
         <div className='d-flex flex-row bd-highlight mb-3'>
           <input
             type="text"
             className='form-control'
             placeholder="ค้นหาชุมนุม"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{maxWidth:"500px"}}
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyPress}
+            style={{ maxWidth: "500px" }}
           />
         </div>
         <h3>รายชื่อชุมนุม</h3>
@@ -157,7 +174,6 @@ export default function HomePage() {
                 <th style={{ minWidth: '80px' }}>ชั้นที่รับ</th>
                 <th style={{ minWidth: '80px' }}>จำนวนที่รับ</th>
                 <th style={{ minWidth: '70px' }}>จำนวนสมาชิก</th>
-                <th style={{ minWidth: '100px' }}>วันที่ปิดรับ</th>
               </tr>
             </thead>
             <tbody>
@@ -182,7 +198,6 @@ export default function HomePage() {
                   </td>
                   <td>{club.classes[0].open_to_receive}</td>
                   <td>{clubMemberCounts[club.club_id] || 0}</td>
-                  <td>{new Date(club.classes[0].end_date_of_receive).toLocaleDateString('th-TH')}</td>
                 </tr>
               ))}
             </tbody>
@@ -198,11 +213,7 @@ export default function HomePage() {
           ))}
         </ul>
       </div>
-
-<Footer />
+      <Footer />
     </div>
-
-  
   );
-
 }
