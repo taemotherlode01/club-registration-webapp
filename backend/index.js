@@ -12,15 +12,16 @@ const upload = multer({ dest: "uploads/" });
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5173", // The URL of the client app
-    credentials: true, // Allow cookies to be sent
+    origin: "https://club-registration-production.up.railway.app", 
+    credentials: true, 
   })
 );
+
 const pool = mysql.createPool({
-  host: "localhost",
+  host: "shuttle.proxy.rlwy.net",
   user: "root",
-  password: "12345678",
-  database: "clubdb",
+  password: "ILwVlSaoQJYFPNDoLfiaHsYVOYJdRREB",
+  database: "railway",
   connectionLimit: 10,
 });
 const query = (sql, params) => {
