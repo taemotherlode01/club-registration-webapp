@@ -16,7 +16,7 @@ export default function ClubStudent({ refresh }) {
       const parsedStudentData = JSON.parse(studentSession);
       setStudentData(parsedStudentData);
 
-      axios.get(`http://localhost:4000/clubs_for_student/${parsedStudentData.id}`)
+      axios.get(`https://club-registration-backend-production.up.railway.app/clubs_for_student/${parsedStudentData.id}`)
         .then(response => {
           setClubs(response.data);
         })
@@ -24,7 +24,7 @@ export default function ClubStudent({ refresh }) {
           console.error('Error fetching clubs:', error);
         });
 
-      axios.get(`http://localhost:4000/combined_time_data`)
+      axios.get(`https://club-registration-backend-production.up.railway.app/combined_time_data`)
         .then(response => {
           setCombinedTimeData(response.data);
         })
@@ -36,13 +36,13 @@ export default function ClubStudent({ refresh }) {
 
   const handleDeleteClub = async (clubId) => {
     try {
-      await axios.delete(`http://localhost:4000/clubs_for_student/${studentData.id}`, {
+      await axios.delete(`https://club-registration-backend-production.up.railway.app/clubs_for_student/${studentData.id}`, {
         data: {
           club_id: clubId
         }
       });
 
-      const response = await axios.get(`http://localhost:4000/clubs_for_student/${studentData.id}`);
+      const response = await axios.get(`https://club-registration-backend-production.up.railway.app/clubs_for_student/${studentData.id}`);
       setClubs(response.data);
 
       // Reload the page to reflect the changes

@@ -20,7 +20,7 @@ function EditTeacher({ teacherData, onRefresh, onClose }) {
 
   const fetchRole = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/role_list');
+      const response = await axios.get('https://club-registration-backend-production.up.railway.app/role_list');
       setRoleList(response.data);
     } catch (error) {
       console.error('Error fetching role list:', error);
@@ -40,7 +40,7 @@ function EditTeacher({ teacherData, onRefresh, onClose }) {
     try {
       const { email, password, first_name, last_name, phone_number, role_id } = formData;
       const requestData = { email, first_name, last_name, phone_number, password, role_id };
-      const response = await axios.put(`http://localhost:4000/update_teacher/${teacherData.teacher_id}`, requestData, {
+      const response = await axios.put(`https://club-registration-backend-production.up.railway.app/update_teacher/${teacherData.teacher_id}`, requestData, {
         headers: {
           'Content-Type': 'application/json'
         }

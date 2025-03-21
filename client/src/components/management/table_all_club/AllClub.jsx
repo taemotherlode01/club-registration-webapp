@@ -21,8 +21,8 @@ const AllClubs = () => {
   const fetchAllClubs = async () => {
     try {
       const [clubsResponse, studentCountResponse] = await Promise.all([
-        axios.get("http://localhost:4000/all_clubs"),
-        axios.get("http://localhost:4000/count_students_club")
+        axios.get("https://club-registration-backend-production.up.railway.app/all_clubs"),
+        axios.get("https://club-registration-backend-production.up.railway.app/count_students_club")
       ]);
 
       const clubsData = clubsResponse.data;
@@ -101,7 +101,7 @@ const AllClubs = () => {
 
       if (result.isConfirmed) {
         try {
-          await axios.delete(`http://localhost:4000/delete_clubs`, {
+          await axios.delete(`https://club-registration-backend-production.up.railway.app/delete_clubs`, {
             data: { clubIds: selectedItems }
           });
           fetchAllClubs();
@@ -144,7 +144,7 @@ const AllClubs = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:4000/delete_club/${clubId}`);
+        await axios.delete(`https://club-registration-backend-production.up.railway.app/delete_club/${clubId}`);
         fetchAllClubs();
         Swal.fire(
           'ลบแล้ว!',

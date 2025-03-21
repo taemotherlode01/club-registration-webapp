@@ -31,7 +31,7 @@ export default function TimeOpen() {
 
     const fetchTimeOpen = async () => {
         try {
-            const response = await axios.get("http://localhost:4000/get_time_open");
+            const response = await axios.get("https://club-registration-backend-production.up.railway.app/get_time_open");
             setTimeOpenData(response.data);
             if (response.data.length > 0) {
                 setDateOfOpen(dayjs(response.data[0].date_of_open));
@@ -44,7 +44,7 @@ export default function TimeOpen() {
 
     const fetchEndTimeOpen = async () => {
         try {
-            const response = await axios.get("http://localhost:4000/get_end_time_open");
+            const response = await axios.get("https://club-registration-backend-production.up.railway.app/get_end_time_open");
             setTimeEndOpenData(response.data);
             if (response.data.length > 0) {
                 setDateEndOfOpen(dayjs(response.data[0].date_end));
@@ -70,12 +70,12 @@ export default function TimeOpen() {
             const dateTimeOfOpen = `${dateOfOpen.format('YYYY-MM-DD')}T${timeOfOpen.format('HH:mm')}`;
             const dateTimeEndOfOpen = `${dateEndOfOpen.format('YYYY-MM-DD')}T${timeEndOfOpen.format('HH:mm')}`;
     
-            const responseStart = await axios.post(`http://localhost:4000/update_time_open/${timeOpenId}`, {
+            const responseStart = await axios.post(`https://club-registration-backend-production.up.railway.app/update_time_open/${timeOpenId}`, {
                 date_of_open: dateTimeOfOpen,
                 time_open: timeOfOpen.format('HH:mm')
             });
     
-            const responseEnd = await axios.post(`http://localhost:4000/update_end_time_open/${endTimeOpenId}`, {
+            const responseEnd = await axios.post(`https://club-registration-backend-production.up.railway.app/update_end_time_open/${endTimeOpenId}`, {
                 date_end: dateTimeEndOfOpen,
                 time_end: timeEndOfOpen.format('HH:mm')
             });

@@ -21,7 +21,7 @@ function AddTeacher({ onClose }) {
 
   const fetchRole = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/role_list');
+      const response = await axios.get('https://club-registration-backend-production.up.railway.app/role_list');
       setRoleList(response.data);
     } catch (error) {
       console.error('Error fetching role list:', error);
@@ -39,7 +39,7 @@ function AddTeacher({ onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:4000/add_teacher', formData);
+      const response = await axios.post('https://club-registration-backend-production.up.railway.app/add_teacher', formData);
       Swal.fire({
         icon: 'success',
         title: 'เพิ่มข้อมูลสำเร็จ!',

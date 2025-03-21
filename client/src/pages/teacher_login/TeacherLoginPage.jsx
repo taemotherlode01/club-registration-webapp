@@ -11,7 +11,7 @@ export default function TeacherLogin() {
   const [role, setRole] = useState(null);
   const handleLogin = async (values) => {
     try {
-      const response = await axios.post('http://localhost:4000/teacher_login', {
+      const response = await axios.post('https://club-registration-backend-production.up.railway.app/teacher_login', {
         email: values.email,
         password: values.password
       });

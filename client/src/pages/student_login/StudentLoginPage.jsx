@@ -13,7 +13,7 @@ export default function StudentLogin() {
 
   const handleLogin = async (values) => {
     try {
-      const response = await axios.post('http://localhost:4000/student_login', {
+      const response = await axios.post('https://club-registration-backend-production.up.railway.app/student_login', {
         student_id: values.student_id,
         card_code: values.card_code
       });

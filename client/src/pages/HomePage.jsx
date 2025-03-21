@@ -18,7 +18,7 @@ export default function HomePage() {
   useEffect(() => {
     fetchAllClubs();
     fetchClubMemberCounts();
-    axios.get(`http://localhost:4000/combined_time_data`)
+    axios.get(`https://club-registration-backend-production.up.railway.app/combined_time_data`)
       .then(response => {
         console.log('Combined Time Data:', response.data);
         setCombinedTimeData(response.data);
@@ -39,7 +39,7 @@ export default function HomePage() {
 
   const fetchAllClubs = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/all_clubs_student");
+      const response = await axios.get("https://club-registration-backend-production.up.railway.app/all_clubs_student");
       const data = response.data;
       const groupedClubs = groupByClubId(data);
       setAllClubs(groupedClubs);
@@ -50,7 +50,7 @@ export default function HomePage() {
 
   const fetchClubMemberCounts = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/count_students_club");
+      const response = await axios.get("https://club-registration-backend-production.up.railway.app/count_students_club");
       const data = response.data;
       const memberCounts = {};
       data.forEach((club) => {

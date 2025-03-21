@@ -30,7 +30,7 @@ function EditStudent({ show, onHide, studentData, onSuccess }) {
 
   const fetchClassList = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/class_list');
+      const response = await axios.get('https://club-registration-backend-production.up.railway.app/class_list');
       setClassList(response.data);
     } catch (error) {
       console.error('Error fetching class list:', error);
@@ -39,7 +39,7 @@ function EditStudent({ show, onHide, studentData, onSuccess }) {
 
   const fetchRoomList = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/room_list');
+      const response = await axios.get('https://club-registration-backend-production.up.railway.app/room_list');
       setRoomList(response.data);
     } catch (error) {
       console.error('Error fetching room list:', error);
@@ -57,7 +57,7 @@ function EditStudent({ show, onHide, studentData, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`http://localhost:4000/update_student/${formData.student_id}`, formData);
+      const response = await axios.put(`https://club-registration-backend-production.up.railway.app/update_student/${formData.student_id}`, formData);
 
       // แสดง SweetAlert2 เมื่อแก้ไขข้อมูลสำเร็จ
       Swal.fire({

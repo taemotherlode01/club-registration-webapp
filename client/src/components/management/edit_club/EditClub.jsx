@@ -27,7 +27,7 @@ function EditClub({ club, updateClubs, onCancel }) {
 
   const fetchClassList = async () => {
     try {
-      const response = await fetch('http://localhost:4000/class_list');
+      const response = await fetch('https://club-registration-backend-production.up.railway.app/class_list');
       if (response.ok) {
         const data = await response.json();
         const options = data.map(classItem => ({
@@ -45,7 +45,7 @@ function EditClub({ club, updateClubs, onCancel }) {
 
   const fetchTeacherList = async () => {
     try {
-      const response = await fetch('http://localhost:4000/teacher_list');
+      const response = await fetch('https://club-registration-backend-production.up.railway.app/teacher_list');
       if (response.ok) {
         const data = await response.json();
         const options = data.map(teacher => ({
@@ -88,7 +88,7 @@ function EditClub({ club, updateClubs, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:4000/edit_club/${club.club_id}`, {
+      const response = await fetch(`https://club-registration-backend-production.up.railway.app/edit_club/${club.club_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -33,7 +33,7 @@ const AllClubChoose = ({ onClubSelection }) => {
   useEffect(() => {
     const fetchAlreadyChosen = async () => {
       try {
-        const response = await axios.get(`http://localhost:4000/student_already_chosen/${studentId}`);
+        const response = await axios.get(`https://club-registration-backend-production.up.railway.app/student_already_chosen/${studentId}`);
         setAlreadyChosen(response.data.alreadyChosen);
       } catch (error) {
         console.error(error);
@@ -47,7 +47,7 @@ const AllClubChoose = ({ onClubSelection }) => {
 
   const fetchAllClubs = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/all_clubs_student");
+      const response = await axios.get("https://club-registration-backend-production.up.railway.app/all_clubs_student");
       const data = response.data;
       const groupedClubs = groupByClubId(data);
       setAllClubs(groupedClubs);
@@ -58,7 +58,7 @@ const AllClubChoose = ({ onClubSelection }) => {
 
   const fetchClubMemberCounts = async () => {
     try {
-      const response = await axios.get("http://localhost:4000/count_students_club");
+      const response = await axios.get("https://club-registration-backend-production.up.railway.app/count_students_club");
       const data = response.data;
       const memberCounts = {};
       data.forEach((club) => {
@@ -73,8 +73,8 @@ const AllClubChoose = ({ onClubSelection }) => {
   const fetchOpeningHours = async () => {
     try {
       const [startResponse, endResponse] = await Promise.all([
-        axios.get("http://localhost:4000/get_time_open"),
-        axios.get("http://localhost:4000/get_end_time_open")
+        axios.get("https://club-registration-backend-production.up.railway.app/get_time_open"),
+        axios.get("https://club-registration-backend-production.up.railway.app/get_end_time_open")
       ]);
 
       if (startResponse.data.length > 0 && endResponse.data.length > 0) {
@@ -157,7 +157,7 @@ const AllClubChoose = ({ onClubSelection }) => {
 
   const handleConfirmSelection = async () => {
     try {
-      const response = await axios.post("http://localhost:4000/student_choose", {
+      const response = await axios.post("https://club-registration-backend-production.up.railway.app/student_choose", {
         student_id: studentId,
         club_id: selectedClubId
       });

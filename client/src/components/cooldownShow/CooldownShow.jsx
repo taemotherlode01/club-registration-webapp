@@ -17,8 +17,8 @@ export default function CooldownShow() {
         const fetchData = async () => {
             try {
                 const [startResponse, endResponse] = await Promise.all([
-                    axios.get("http://localhost:4000/get_time_open"),
-                    axios.get("http://localhost:4000/get_end_time_open")
+                    axios.get("https://club-registration-backend-production.up.railway.app/get_time_open"),
+                    axios.get("https://club-registration-backend-production.up.railway.app/get_end_time_open")
                 ]);
 
                 if (startResponse.data.length > 0 && endResponse.data.length > 0) {

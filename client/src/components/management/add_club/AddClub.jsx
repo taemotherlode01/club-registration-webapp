@@ -33,7 +33,7 @@ function AddClub({ updateClubs, onClose }) {
 
   const fetchClassList = async () => {
     try {
-      const response = await fetch('http://localhost:4000/class_list');
+      const response = await fetch('https://club-registration-backend-production.up.railway.app/class_list');
       if (response.ok) {
         const data = await response.json();
         const options = data.map(classItem => ({
@@ -51,7 +51,7 @@ function AddClub({ updateClubs, onClose }) {
 
   const fetchTeacherList = async () => {
     try {
-      const response = await fetch('http://localhost:4000/teacher_list');
+      const response = await fetch('https://club-registration-backend-production.up.railway.app/teacher_list');
       if (response.ok) {
         const data = await response.json();
         const filteredTeacherList = data.filter(teacher => {
@@ -104,7 +104,7 @@ function AddClub({ updateClubs, onClose }) {
     try {
       const formDataToSend = { ...formData };
       formDataToSend.teacher_id.push(loggedInTeacherId);
-      const response = await fetch('http://localhost:4000/create_club', {
+      const response = await fetch('https://club-registration-backend-production.up.railway.app/create_club', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

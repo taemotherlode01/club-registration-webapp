@@ -109,7 +109,7 @@ function AllStudents() {
       const formData = new FormData();
       formData.append("file", file);
   
-      await axios.post("http://localhost:4000/upload_excel", formData, {
+      await axios.post("https://club-registration-backend-production.up.railway.app/upload_excel", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -146,7 +146,7 @@ function AllStudents() {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/all_students');
+      const response = await axios.get('https://club-registration-backend-production.up.railway.app/all_students');
       setStudents(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -229,7 +229,7 @@ function AllStudents() {
 
       if (result.isConfirmed) {
         try {
-          await axios.delete(`http://localhost:4000/delete_students`, {
+          await axios.delete(`https://club-registration-backend-production.up.railway.app/delete_students`, {
             data: { studentIds: selectedItems }
           });
           fetchData();
@@ -272,7 +272,7 @@ function AllStudents() {
       });
 
       if (result.isConfirmed) {
-        await axios.delete(`http://localhost:4000/delete_student/${studentId}`);
+        await axios.delete(`https://club-registration-backend-production.up.railway.app/delete_student/${studentId}`);
         fetchData();
         Swal.fire(
           'ลบแล้ว!',

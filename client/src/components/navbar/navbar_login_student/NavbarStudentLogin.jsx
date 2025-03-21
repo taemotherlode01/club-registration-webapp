@@ -43,7 +43,7 @@ export default function NavbarStudentLogin() {
   // Function to handle logout
   const handleLogout = () => {
     // Send POST request to server to logout
-    axios.post('http://localhost:4000/logout-student')
+    axios.post('https://club-registration-backend-production.up.railway.app/logout-student')
       .then(response => {
         if (response.status === 200) {
           // Clear session data from localStorage

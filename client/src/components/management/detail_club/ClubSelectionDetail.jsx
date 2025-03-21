@@ -15,7 +15,7 @@ export default function ClubSelectionDetail({ club, onClose ,updateMemberCount }
   useEffect(() => {
     const fetchClubData = async () => {
       try {
-        const response = await axios.get(`http://localhost:4000/student_club/${club.club_id}`);
+        const response = await axios.get(`https://club-registration-backend-production.up.railway.app/student_club/${club.club_id}`);
         setClubData(response.data);
         setMemberCount(response.data.length);
       } catch (error) {
@@ -66,7 +66,7 @@ export default function ClubSelectionDetail({ club, onClose ,updateMemberCount }
       // Filter out the deleted student from clubData
       setClubData(prevClubData => prevClubData.filter(student => student.student_id !== studentId));
       // Delete the student from the backend
-      await axios.delete(`http://localhost:4000/delete_students_club/${studentId}`);
+      await axios.delete(`https://club-registration-backend-production.up.railway.app/delete_students_club/${studentId}`);
       // Update the member count
       setMemberCount(prevCount => prevCount - 1);
       // Call the function to update member count in MyClub component

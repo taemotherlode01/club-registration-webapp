@@ -6,7 +6,7 @@ export default function CardCountStudentClass() {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:4000/count_students")
+    fetch("https://club-registration-backend-production.up.railway.app/count_students")
       .then(response => response.json())
       .then(data => setStudents(data))
       .catch(error => console.error('Error fetching data:', error));

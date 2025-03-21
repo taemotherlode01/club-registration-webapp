@@ -36,10 +36,10 @@ const MyClub = () => {
 
   const fetchAllClubs = async () => {
     try {
-      const response = await axios.get(`http://localhost:4000/all_clubs?teacherId=${teacherId}`);
+      const response = await axios.get(`https://club-registration-backend-production.up.railway.app/all_clubs?teacherId=${teacherId}`);
       const data = response.data;
 
-      const studentCountResponse = await axios.get(`http://localhost:4000/count_students_club`);
+      const studentCountResponse = await axios.get(`https://club-registration-backend-production.up.railway.app/count_students_club`);
       const studentCountData = studentCountResponse.data;
 
       const groupedClubs = groupByClubId(data, studentCountData);
@@ -105,7 +105,7 @@ const MyClub = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:4000/delete_club/${clubId}`);
+        await axios.delete(`https://club-registration-backend-production.up.railway.app/delete_club/${clubId}`);
         await Swal.fire({
           title: 'ลบสำเร็จ!',
           text: 'ชุมนุมถูกลบเรียบร้อยแล้ว',
